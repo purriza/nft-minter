@@ -1,184 +1,49 @@
-# Foundry Template [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+THE PROJECT 
 
-[gha]: https://github.com/3s-urriza/nft-minter/actions
-[gha-badge]: https://github.com/3s-urriza/nft-minter/actions/workflows/ci.yml/badge.svg
-[foundry]: https://getfoundry.sh/
-[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
-[license]: https://opensource.org/licenses/MIT
-[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+This solution implements a NFT Minter using the Foundry Framework.
 
-A Foundry-based template for developing Solidity smart contracts.
 
-## What's Inside
+## The NFT
 
-- [Forge](https://github.com/foundry-rs/foundry/blob/master/forge): compile, test, fuzz, debug and deploy smart contracts
-- [Forge Std](https://github.com/foundry-rs/forge-std): collection of helpful contracts and cheatcodes for testing
-- [Anvil](https://github.com/foundry-rs/foundry/tree/master/anvil): local Ethereum node, akin to Ganache, Hardhat Network.
+The NFTs will implement an ERC-721 that implements the [Layer Zero Omnichain](https://medium.com/layerzero-official/layerzero-an-omnichain-interoperability-protocol-b43d2ae975b6) functionality. 
+This functionality allows the token to be transferred from and to other chains, as long as the smart contracts are deployed in both chains (We can do this for **n** chains). 
 
-## Getting Started
+## The NFT Minter
 
-Click the [`Use this template`](https://github.com/threesigmaxyz/foundry-template/generate) button at the top of the page to create a new repository with this repo as the initial state.
+The NFT Minter is responsible to mint NFTs from the previously mentioned collection, since it is the only actor that can mint NFTs and all the Sales logic is implemented here. 
 
-Or, if you prefer to install the template manually:
+### NFT Types
 
-```sh
-forge init my-project --template https://github.com/threesigmaxyz/foundry-template
-cd my-project
-make install
-```
+NFTs can have different types (or have just 1 type). For each type there will be an associated ETH price that has to be sent to the contract when minting an asset. 
+These types are suppose to be ordered by IDs. Below is an example showcasing the different types. There shouldn’t be any gaps between NFTs.
 
-If this is your first time with Foundry, check out the [installation](https://github.com/foundry-rs/foundry#installation) instructions.
+			Quantity	Price		IDs
+Type I		1000		0.01 ETH	1-1000
+Type II		1000		0.05 ETH	1001-2000
+Type III	500			0.25 ETH	2001-2500
 
-## Blueprint
- 
-```ml
-lib
-├─ forge-std — https://github.com/foundry-rs/forge-std
-├─ openzeppelin-contracts — https://github.com/OpenZeppelin/openzeppelin-contracts
-scripts
-├─ 01_Deploy.s.sol — Simple Deployment Script
-src
-├─ Greeter.sol — A Greeter Contract
-test
-└─ Greeter.t.sol — Minimal Tests
-```
+### Sales
 
-## Features
+The minting of the NFTs will be done throughout several different Sale. Sales can be added/edited/removed by the Owner of the NFT Minter. 
+Whenever a Sale ends, another Sale starts right after. If all NFTs are not minted during a Sale, they should be available to be minted in the next available public Sale. 
+If there isn’t a public Sale after that, they will be lost, since it won’t be possibly to mint them. 
 
-This template builds upon the frameworks and libraries mentioned above, so for details about their specific features, please consult their respective documentations.
+A Sale has the following attributes
 
-For example, for Foundry, you can refer to the [Foundry Book](https://book.getfoundry.sh/). You might be in particular interested in reading the [Writing Tests](https://book.getfoundry.sh/forge/writing-tests.html) guide.
+- Duration of the Sale. The last Sale can end only when all NFTs have been minted instead.
+- Type of Sale
+    - Team Mint (Specific address gets all NFTs from this Sale)
+    - Whitelist Mint (Only whitelisted addresses can mint NFTs during this Sale).
+    - Public Mint (Anyone can mint NFTs during this Sale)
+- Limit of NFTs that each address can mint per NFT type. Here is an example
 
-### GitHub Actions
+			Sale I (Team Mint)	Sale II (Whitelist)	Sale III (Public Sale)
+Type I		200					2					1
+Type II		200					2					1
+Type III	0					1					1
+Type IV		0					1					1
 
-This template comes with GitHub Actions pre-configured. Your contracts will be linted and tested on every push and pull
-request made to the `main` branch.
-
-You can edit the CI script in [.github/workflows/ci.yml](./.github/workflows/ci.yml).
-
-### Conventional Commits
-
-This template enforces the [Conventional Commits](https://www.conventionalcommits.org/) standard for git commit messages.
-This is a lightweight convention that creates an explicit commit history, which makes it easier to write automated
-tools on top of.
-
-### Sensible Defaults
-
-This template comes with sensible default configurations in the following files:
-
-```text
-├── .gitignore
-├── foundry.toml
-└── remappings.txt
-└── slither.config.json
-```
-
-
-## Usage
-
-Here's a list of the most frequently needed commands.
-
-### Build
-
-Build the contracts:
-
-```sh
-$ make build
-```
-
-### Clean
-
-Delete the build artifacts and cache directories:
-
-```sh
-$ make clean
-```
-
-### Compile
-
-Compile the contracts:
-
-```sh
-$ make build
-```
-
-### Deploy
-
-Prior to deployment you must configure the following variables in the `.env` file:
-
-- `MAINNET_RPC_URL/TESTNET_RPC_URL`: An RPC endpoint to connect to the blockchain.
-- `PRIVATE_KEY`: The private key for the deployer wallet.
-- `ETHERSCAN_API_KEY`: (Optional) An Etherscan API key for contract verification.
-
-Note that a fresh `ETHERSCAN_API_KEY` can take a few minutes to activate, you can query any [endpoint](https://api-rinkeby.etherscan.io/api?module=block&action=getblockreward&blockno=2165403&apikey=ETHERSCAN_API_KEY) to check its status.
-
-#### Local Deployment
-
-By default, Foundry ships with a local Ethereum node [Anvil](https://github.com/foundry-rs/foundry/tree/master/anvil) (akin to Ganache and Hardhat Network). This allows us to quickly deploy to our local network for testing.
-
-To start a local blockchain, with a determined private key, run:
-
-```shthreesigmaxyz/foundry-template
-make anvil
-```
-
-Afterwards, you can deploy to it via:
-
-```sh
-make deploy-anvil contract=<CONTRACT_NAME>
-```
-
-#### Testnet Deployment
-
-In order to deploy the contracts to a testnet you must have configured the `TESTNET_RPC_URL` variable. Additionaly, if you need testnet ETH for the deployment you can request it from the following [faucet](https://faucet.paradigm.xyz/).
-
-To execute the deplyment run:
-
-```sh
-make deploy-testnet contract=<CONTRACT_NAME>
-```
-
-Forge is going to run our script and broadcast the transactions for us. This can take a little while, since Forge will also wait for the transaction receipts.
-
-#### Mainnet Deployment
-
-A mainnet deployment has a similar flow to a testnet deployment with the distinction that it requires you to configure the `MAINNET_RPC_URL` variable.
-
-Afterwards, simply run:
-
-```sh
-make deploy-mainnet contract=<CONTRACT_NAME>
-```
-
-### Test
-
-To run all tests execute the following commad:
-
-```
-make tests
-```
-
-Alternatively, you can run specific tests as detailed in this [guide](https://book.getfoundry.sh/forge/tests).
-
-### Security
-
-This repository includes a Slither configuration, a popular static analysis tool from [Trail of Bits](https://www.trailofbits.com/). To use Slither, you'll first need to [install Python](https://www.python.org/downloads/) and [install Slither](https://github.com/crytic/slither#how-to-install).
-
-Then, you can run:
-
-```sh
-make slither
-```
-
-And analyse the output of the tool.
-
-# About Us
-[Three Sigma](https://threesigma.xyz/) is a venture builder firm focused on blockchain engineering, research, and investment. Our mission is to advance the adoption of blockchain technology and contribute towards the healthy development of the Web3 space.
-
-If you are interested in joining our team, please contact us [here](mailto:info@threesigma.xyz).
-
----
-
-<p align="center">
-  <img src="https://threesigma.xyz/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fthree-sigma-labs-research-capital-white.0f8e8f50.png&w=2048&q=75" width="75%" />
-</p>
+Since it is usual that a Whitelist Sale has +1000 whitelisted addresses, which is not a reasonable amount of addresses to store on-chain. 
+The solution for this issue will be the usage of an off-chain Merkle Tree that has the whitelisted addresses as leafs. 
+This way it is possible to only store the Merkle Root on-chain and then check if a given address is whitelisted utilizing a Merkle Proof. 
+Using OpenZeppelin Merkle Proof library to perform the cryptographic verifications of the Merkle Proof on-chain and coding the off-chain Merkle Tree generator along with the Merkle Proof generator for a given address of that Merkle Tree.
